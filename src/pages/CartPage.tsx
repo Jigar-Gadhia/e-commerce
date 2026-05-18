@@ -1,16 +1,30 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useCart } from "../cart-context";
 import AddToCartButton from "@/components/AddToCartButton";
+import Icon from "@/components/Icon";
 
 export function CartPage() {
   const { items, itemCount, totalValue, addItem, removeItem } = useCart();
+  const location = useLocation();
 
   return (
     <main
       className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8"
       data-testid="cart-page"
     >
+      <Link
+        to={{ pathname: "/", search: location.search }}
+        className="group inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900 mb-5"
+      >
+        <Icon
+          name="ArrowLeft"
+          size={18}
+          className="transition-transform duration-200 group-hover:-translate-x-1"
+        />
+
+        <span>Back to Home</span>
+      </Link>
       <section className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
           Cart
@@ -51,7 +65,6 @@ export function CartPage() {
                 quantity={line.quantity}
                 onAdd={addItem}
                 onRemove={removeItem}
-                showRemoveButton
               />
             </motion.article>
           ))}

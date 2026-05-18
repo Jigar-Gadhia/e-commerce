@@ -6,7 +6,6 @@ interface AddToCartButtonProps {
   quantity: number;
   onAdd: (product: Product) => void;
   onRemove: (productId: number) => void;
-  showRemoveButton?: boolean;
 }
 
 export default function AddToCartButton({
@@ -14,7 +13,6 @@ export default function AddToCartButton({
   quantity,
   onAdd,
   onRemove,
-  showRemoveButton = false,
 }: AddToCartButtonProps) {
   return (
     <AnimatePresence mode="wait">
@@ -30,18 +28,6 @@ export default function AddToCartButton({
           data-testid="add-to-cart"
         >
           Add to Cart
-        </motion.button>
-      ) : quantity === 1 && showRemoveButton ? (
-        <motion.button
-          key="remove-button"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={() => onRemove(product.id)}
-          className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100"
-        >
-          Remove
         </motion.button>
       ) : (
         <motion.div

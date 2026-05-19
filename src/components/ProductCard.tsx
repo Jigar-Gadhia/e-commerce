@@ -47,10 +47,8 @@ const ProductCard = ({ product, quantity = 0 }: ProductCardProps) => {
             </div>
           )}
 
-          {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-          {/* Cart Badge */}
           {quantity > 0 && (
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}

@@ -69,10 +69,9 @@ export function ProductDetailPage() {
 
         {isLoading && (
           <section className="mt-6 grid gap-6 md:grid-cols-2 animate-pulse">
-            {/* Image Skeleton */}
+
             <div className="aspect-square w-full rounded-lg bg-slate-200" />
 
-            {/* Content Skeleton */}
             <div className="space-y-4">
               <div className="h-4 w-24 rounded bg-slate-200" />
 

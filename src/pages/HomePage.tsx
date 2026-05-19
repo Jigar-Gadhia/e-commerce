@@ -1,43 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   fetchCategories,
   fetchProducts,
   fetchProductsByCategory,
 } from "../api";
-import type { Category, Product, SortOption } from "../types";
+import type { Category, Product } from "../types";
 import CategoryFilter from "@/components/CategoryFilter";
-import SortDropdown from "@/components/SortDropdown";
 import { useCart } from "@/cart-context";
 import ProductCard from "@/components/ProductCard";
-
-const SORT_OPTIONS: { label: string; value: SortOption }[] = [
-  { label: "Default", value: "default" },
-  { label: "Price: Low to High", value: "price-asc" },
-  { label: "Price: High to Low", value: "price-desc" },
-  { label: "Title: A to Z", value: "title-asc" },
-];
+import Icon from "@/components/Icon";
 
 const FILTER_STORAGE_KEY = "basic-shop-filters";
-
-function sortProducts(products: Product[], sort: SortOption): Product[] {
-  const data = [...products];
-
-  if (sort === "price-asc") {
-    return data.sort((a, b) => a.price - b.price);
-  }
-
-  if (sort === "price-desc") {
-    return data.sort((a, b) => b.price - a.price);
-  }
-
-  if (sort === "title-asc") {
-    return data.sort((a, b) => a.title.localeCompare(b.title));
-  }
-
-  return data;
-}
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -45,8 +20,10 @@ export function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const hasHydratedFilters = useRef(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const { items } = useCart();
+
+  console.log(categories)
 
   const selectedCategories = useMemo(() => {
     return searchParams
@@ -55,34 +32,22 @@ export function HomePage() {
       .filter((value) => Number.isFinite(value));
   }, [searchParams]);
 
-  const sortParam = searchParams.get("sort");
-  const sort =
-    sortParam && SORT_OPTIONS.some((option) => option.value === sortParam)
-      ? (sortParam as SortOption)
-      : "default";
-
+  // Runs once on mount — restores filters from localStorage if no URL params present
   useEffect(() => {
-    if (hasHydratedFilters.current) {
-      return;
-    }
-
-    const hasQueryFilters =
-      searchParams.getAll("category").length > 0 || searchParams.has("sort");
+    const hasQueryFilters = searchParams.getAll("category").length > 0;
     if (hasQueryFilters) {
-      hasHydratedFilters.current = true;
+      setIsHydrated(true);
       return;
     }
 
     const stored = localStorage.getItem(FILTER_STORAGE_KEY);
     if (!stored) {
+      setIsHydrated(true);
       return;
     }
 
     try {
-      const parsed = JSON.parse(stored) as {
-        categories?: number[];
-        sort?: SortOption;
-      };
+      const parsed = JSON.parse(stored) as { categories?: number[] };
       const next = new URLSearchParams();
 
       parsed.categories?.forEach((categoryId) => {
@@ -91,46 +56,52 @@ export function HomePage() {
         }
       });
 
-      if (parsed.sort && parsed.sort !== "default") {
-        next.set("sort", parsed.sort);
-      }
-
       if (next.toString()) {
         setSearchParams(next, { replace: true });
+        // isHydrated set to true after searchParams settles (next effect run)
         return;
       }
     } catch {
       localStorage.removeItem(FILTER_STORAGE_KEY);
     }
 
-    hasHydratedFilters.current = true;
-  }, [searchParams, setSearchParams]);
+    setIsHydrated(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount only — intentionally excludes searchParams
 
+  // Once searchParams are set from localStorage, mark hydration done
   useEffect(() => {
-    if (!hasHydratedFilters.current) {
-      return;
+    if (!isHydrated && searchParams.getAll("category").length > 0) {
+      setIsHydrated(true);
     }
+  }, [isHydrated, searchParams]);
+
+  // Persist filters after hydration
+  useEffect(() => {
+    if (!isHydrated) return;
 
     localStorage.setItem(
       FILTER_STORAGE_KEY,
-      JSON.stringify({
-        categories: selectedCategories,
-        sort,
-      }),
+      JSON.stringify({ categories: selectedCategories }),
     );
-  }, [selectedCategories, sort]);
+  }, [isHydrated, selectedCategories]);
+
+ useEffect(() => {
+  const controller = new AbortController();
+
+  fetchCategories(controller.signal)
+    .then(setCategories)
+    .catch(() => {
+      !controller.signal.aborted && setErrorMessage("Could not load categories.");
+    });
+
+  return () => controller.abort();
+}, []);
 
   useEffect(() => {
-    fetchCategories()
-      .then((response) => {
-        setCategories(response);
-      })
-      .catch(() => {
-        setErrorMessage("Could not load categories.");
-      });
-  }, []);
+    if (!isHydrated) return;
 
-  useEffect(() => {
+    const controller = new AbortController();
     async function loadProducts() {
       setIsLoading(true);
       setErrorMessage(null);
@@ -139,25 +110,18 @@ export function HomePage() {
         let response: Product[];
 
         if (selectedCategories.length === 0) {
-          response = await fetchProducts();
+          response = await fetchProducts(controller.signal);
         } else {
           const grouped = await Promise.all(
             selectedCategories.map((categoryId) =>
-              fetchProductsByCategory(categoryId),
+              fetchProductsByCategory(categoryId, controller.signal),
             ),
           );
 
           const map = new Map<number, Product>();
-
-          grouped.flat().forEach((product) => {
-            map.set(product.id, product);
-          });
-
+          grouped.flat().forEach((product) => map.set(product.id, product));
           response = Array.from(map.values());
         }
-
-        // sort after api fetch
-        response = sortProducts(response, sort);
 
         setProducts(response);
       } catch {
@@ -168,7 +132,9 @@ export function HomePage() {
     }
 
     void loadProducts();
-  }, [selectedCategories, sort]);
+
+    return () => controller.abort();
+  }, [isHydrated, selectedCategories]);
 
   function toggleCategory(categoryId: number) {
     const current = new Set(selectedCategories);
@@ -181,96 +147,95 @@ export function HomePage() {
 
     const next = new URLSearchParams(searchParams);
     next.delete("category");
-    [...current].forEach((id) => {
-      next.append("category", String(id));
-    });
-
-    setSearchParams(next);
-  }
-
-  function updateSort(nextSort: SortOption) {
-    const next = new URLSearchParams(searchParams);
-    if (nextSort === "default") {
-      next.delete("sort");
-    } else {
-      next.set("sort", nextSort);
-    }
+    [...current].forEach((id) => next.append("category", String(id)));
     setSearchParams(next);
   }
 
   return (
-    <main
-      className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8"
-      data-testid="home-page"
+    <motion.section
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
     >
-      <section className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-          Discover Products
-        </h1>
-        <p className="max-w-2xl text-slate-600">
-          Explore curated collections, discover trending items, and shop
-          products tailored to your style.
-        </p>
-      </section>
-
-      <section className="mt-6 flex flex-row items-center justify-between gap-3">
-        <CategoryFilter
-          categories={categories}
-          selectedCategories={selectedCategories}
-          onToggle={toggleCategory}
-        />
-        <SortDropdown
-          value={sort}
-          options={SORT_OPTIONS}
-          onChange={(value) => updateSort(value as SortOption)}
-        />
-      </section>
-
-      {errorMessage && (
-        <p className="mt-6 text-sm text-red-600">{errorMessage}</p>
-      )}
-      {isLoading && (
-        <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <div key={index} className="space-y-2 animate-pulse">
-              <div className="aspect-square w-full rounded-lg bg-slate-200" />
-
-              <div className="h-4 w-3/4 rounded bg-slate-200" />
-
-              <div className="h-4 w-1/4 rounded bg-slate-200" />
-            </div>
-          ))}
+      <main
+        className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8"
+        data-testid="home-page"
+      >
+        <section className="space-y-4">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            Discover Products
+          </h1>
+          <p className="max-w-2xl text-slate-600">
+            Explore curated collections, discover trending items, and shop
+            products tailored to your style.
+          </p>
         </section>
-      )}
 
-      <AnimatePresence mode="wait">
-        {!isLoading && !errorMessage && (
+        <section className="mt-6">
+          <CategoryFilter
+            categories={categories}
+            selectedCategories={selectedCategories}
+            onToggle={toggleCategory}
+          />
+        </section>
+
+        {errorMessage && (
+          <p className="mt-6 text-sm text-red-600">{errorMessage}</p>
+        )}
+        {isLoading && (
+          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="space-y-2 animate-pulse">
+                <div className="aspect-square w-full rounded-lg bg-slate-200" />
+                <div className="h-4 w-3/4 rounded bg-slate-200" />
+                <div className="h-4 w-1/4 rounded bg-slate-200" />
+              </div>
+            ))}
+          </section>
+        )}
+
+        {products.length === 0 && (
           <motion.section
-            key={`${selectedCategories.join("-")}-${sort}`}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+            className="mt-5 flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"
           >
-            {products.map((product) => {
-              const cartItem = items.find(
-                (item) => item.product.id === product.id,
-              );
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
+              <Icon name="ShoppingBag" size={34} className="text-slate-500" />
+            </div>
 
-              const quantity = cartItem?.quantity || 0;
-              return (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  quantity={quantity}
-                  search={searchParams.toString()}
-                />
-              );
-            })}
+            <h2 className="mt-6 text-2xl font-semibold text-slate-900">
+              No Products found
+            </h2>
           </motion.section>
         )}
-      </AnimatePresence>
-    </main>
+
+        <AnimatePresence mode="wait">
+          {!isLoading && !errorMessage && (
+            <motion.section
+              key={selectedCategories.join("-")}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+            >
+              {products.map((product) => {
+                const cartItem = items.find(
+                  (item) => item.product.id === product.id,
+                );
+                const quantity = cartItem?.quantity || 0;
+                return (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    quantity={quantity}
+                  />
+                );
+              })}
+            </motion.section>
+          )}
+        </AnimatePresence>
+      </main>
+    </motion.section>
   );
 }

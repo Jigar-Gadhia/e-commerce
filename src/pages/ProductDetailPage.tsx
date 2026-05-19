@@ -17,6 +17,7 @@ export function ProductDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (!id) {
       setErrorMessage("Missing product id.");
       setIsLoading(false);
@@ -26,16 +27,18 @@ export function ProductDetailPage() {
     setIsLoading(true);
     setErrorMessage(null);
 
-    fetchProductById(Number(id))
+    fetchProductById(Number(id), controller.signal)
       .then((response) => {
         setProduct(response);
       })
       .catch(() => {
-        setErrorMessage("Could not load product details.");
+        !controller.signal.aborted && setErrorMessage("Could not load product details.");
       })
       .finally(() => {
         setIsLoading(false);
       });
+
+      return () => controller.abort()
   }, [id]);
 
   const cartItem = items.find((item) => item.product.id === product?.id);
@@ -43,81 +46,86 @@ export function ProductDetailPage() {
   const quantity = cartItem?.quantity || 0;
 
   return (
-    <main
-      className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8"
-      data-testid="product-page"
+    <motion.section
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
     >
-      <Link
-        to={{ pathname: "/", search: location.search }}
-        className="group inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900"
+      <main
+        className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8"
+        data-testid="product-page"
       >
-        <Icon
-          name="ArrowLeft"
-          size={18}
-          className="transition-transform duration-200 group-hover:-translate-x-1"
-        />
-
-        <span>Back to Home</span>
-      </Link>
-
-      {isLoading && (
-        <section className="mt-6 grid gap-6 md:grid-cols-2 animate-pulse">
-          {/* Image Skeleton */}
-          <div className="aspect-square w-full rounded-lg bg-slate-200" />
-
-          {/* Content Skeleton */}
-          <div className="space-y-4">
-            <div className="h-4 w-24 rounded bg-slate-200" />
-
-            <div className="h-8 w-3/4 rounded bg-slate-200" />
-
-            <div className="h-6 w-28 rounded bg-slate-200" />
-
-            <div className="space-y-2">
-              <div className="h-4 w-full rounded bg-slate-200" />
-              <div className="h-4 w-full rounded bg-slate-200" />
-              <div className="h-4 w-5/6 rounded bg-slate-200" />
-            </div>
-
-            <div className="h-10 w-32 rounded-md bg-slate-200" />
-          </div>
-        </section>
-      )}
-      {errorMessage && (
-        <p className="mt-6 text-sm text-red-600">{errorMessage}</p>
-      )}
-
-      {product && !isLoading && (
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="mt-6 grid gap-6 md:grid-cols-2"
+        <Link
+          to={{ pathname: "/", search: location.search }}
+          className="group inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition-colors hover:text-slate-900"
         >
-          <img
-            src={product.images[0]}
-            alt={product.title}
-            className="w-full rounded-lg object-cover"
+          <Icon
+            name="ArrowLeft"
+            size={18}
+            className="transition-transform duration-200 group-hover:-translate-x-1"
           />
 
-          <article className="space-y-4">
-            <p className="text-sm text-slate-500">{product.category.name}</p>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-              {product.title}
-            </h1>
-            <p className="text-xl font-semibold text-slate-900">
-              ${product.price}
-            </p>
-            <p className="leading-7 text-slate-700">{product.description}</p>
-            <AddToCartButton
-              product={product}
-              quantity={quantity}
-              onAdd={addItem}
-              onRemove={removeItem}
+          <span>Back to Home</span>
+        </Link>
+
+        {isLoading && (
+          <section className="mt-6 grid gap-6 md:grid-cols-2 animate-pulse">
+            {/* Image Skeleton */}
+            <div className="aspect-square w-full rounded-lg bg-slate-200" />
+
+            {/* Content Skeleton */}
+            <div className="space-y-4">
+              <div className="h-4 w-24 rounded bg-slate-200" />
+
+              <div className="h-8 w-3/4 rounded bg-slate-200" />
+
+              <div className="h-6 w-28 rounded bg-slate-200" />
+
+              <div className="space-y-2">
+                <div className="h-4 w-full rounded bg-slate-200" />
+                <div className="h-4 w-full rounded bg-slate-200" />
+                <div className="h-4 w-5/6 rounded bg-slate-200" />
+              </div>
+
+              <div className="h-10 w-32 rounded-md bg-slate-200" />
+            </div>
+          </section>
+        )}
+        {errorMessage && (
+          <p className="mt-6 text-sm text-red-600">{errorMessage}</p>
+        )}
+
+        {product && !isLoading && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-6 grid gap-6 md:grid-cols-2"
+          >
+            <img
+              src={product.images[0]}
+              alt={product.title}
+              className="w-full rounded-lg object-cover"
             />
-          </article>
-        </motion.section>
-      )}
-    </main>
+
+            <article className="space-y-4">
+              <p className="text-sm text-slate-500">{product.category.name}</p>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                {product.title}
+              </h1>
+              <p className="text-xl font-semibold text-slate-900">
+                ${product.price}
+              </p>
+              <p className="leading-7 text-slate-700">{product.description}</p>
+              <AddToCartButton
+                product={product}
+                quantity={quantity}
+                onAdd={addItem}
+                onRemove={removeItem}
+              />
+            </article>
+          </motion.section>
+        )}
+      </main>
+    </motion.section>
   );
 }

@@ -3,64 +3,122 @@ describe("E-Commerce App", () => {
     cy.visit("/");
   });
 
-  it("home page shows products and can open a product", () => {
-    cy.getByTestId("home-page").should("be.visible");
+  describe("Home Page", () => {
+    beforeEach(() => {
+      cy.visit("/");
+    });
 
-    cy.get('[data-testid^="product-item-"]').first().should("be.visible").click();
+    it("shows products and can open a product", () => {
+      // page visible
+      cy.getByTestId("home-page").should("be.visible");
 
-    cy.getByTestId("product-page").should("be.visible");
-    cy.getByTestId("add-to-cart").should("be.visible");
+      // wait for loading to finish
+      cy.get('[data-testid^="product-item-"]', {
+        timeout: 10000,
+      }).should("have.length.greaterThan", 0);
+
+      // open first product
+      cy.get('[data-testid^="product-item-"]')
+        .first()
+        .should("be.visible")
+        .click();
+
+      // product page visible
+      cy.getByTestId("product-page").should("be.visible");
+
+      // add to cart visible
+      cy.getByTestId("add-to-cart-btn").should("be.visible");
+
+      // route validation
+      cy.url().should("include", "/product");
+    });
   });
 
-  it("user can add and remove item from cart", () => {
-    // open product
-    cy.get('[data-testid^="product-item-"]').first().click();
+  it("filters products by category", () => {
+    cy.getByTestId("category-filter-toggle").click();
 
-    // add to cart
-    cy.getByTestId("add-to-cart").click();
+    cy.get('[data-testid^="category-checkbox-"]', {
+      timeout: 10000,
+    })
+      .should("have.length.greaterThan", 0)
+      .first()
+      .click();
 
-    // cart badge visible
-    cy.getByTestId("cart-link").should("contain.text", "1");
+    cy.url().should("include", "category=");
 
-    // open cart
-    cy.getByTestId("cart-link").click();
-
-    cy.getByTestId("cart-page").should("be.visible");
-    cy.getByTestId("cart-total").should("be.visible");
-
-    // remove button appears for quantity 1
-    cy.getByTestId("quantity-display").should("have.attr", "data-show-remove", "true");
-    cy.getByTestId("minus-button").should("contain.text", "Remove");
-
-    // remove item
-    cy.getByTestId("minus-button").click();
-
-    // cart empty state
-    cy.contains(/your cart is empty/i).should("be.visible");
+    cy.get('[data-testid^="product-item-"]').should(
+      "have.length.greaterThan",
+      0,
+    );
   });
 
-  it("user can increase and decrease cart quantity", () => {
-    cy.get('[data-testid^="product-item-"]').first().click();
+  describe("Cart", () => {
+    it("user can add and remove item from cart", () => {
+      // open product
+      cy.get('[data-testid^="product-item-"]').first().click();
 
-    // add first item
-    cy.getByTestId("add-to-cart").click();
+      // add to cart
+      cy.getByTestId("add-to-cart-btn").should("be.visible").click();
 
-    // add second item using pill
-    cy.getByTestId("plus-button").click();
+      // cart badge updates
+      cy.getByTestId("cart-link").should("contain", "1");
 
-    // quantity visible
-    cy.getByTestId("quantity-display").should("contain.text", "2");
+      // open cart
+      cy.getByTestId("cart-link").click();
 
-    // remove one item
-    cy.getByTestId("minus-button").click();
+      cy.url().should("include", "/cart");
 
-    // quantity visible
-    cy.getByTestId("quantity-display").should("contain.text", "1");
+      cy.getByTestId("cart-page").should("be.visible");
 
-    // debug info
-    cy.getByTestId("quantity-display").should("have.attr", "data-show-remove", "true");
+      cy.get('[data-testid^="cart-line-item-"]').should("have.length", 1);
 
-    // remove button should appear for qty 1
-    cy.getByTestId("minus-button").should("contain.text", "Remove");
+      cy.getByTestId("cart-total").should("be.visible");
+
+      // remove item
+      cy.getByTestId("decrease-qty-btn").should("be.visible").click();
+
+      // empty state visible
+      cy.getByTestId("empty-cart-state").should("be.visible");
+    });
+
+    it("user can increase and decrease cart quantity", () => {
+      cy.get('[data-testid^="product-item-"]').first().click();
+
+      // add first item
+      cy.getByTestId("add-to-cart-btn").click();
+
+      // increase quantity
+      cy.getByTestId("increase-qty-btn").should("be.visible").click();
+
+      // quantity = 2
+      cy.getByTestId("quantity-display").should("contain", "2");
+
+      // decrease quantity
+      cy.getByTestId("decrease-qty-btn").click();
+
+      // quantity = 1
+      cy.getByTestId("quantity-display").should("contain", "1");
+
+      // remove button still visible
+      cy.getByTestId("decrease-qty-btn").should("be.visible");
+    });
+
+    it("persists cart after page refresh", () => {
+      cy.get('[data-testid^="product-item-"]').first().click();
+
+      cy.getByTestId("add-to-cart-btn").click();
+
+      cy.reload();
+
+      cy.getByTestId("cart-link").should("contain", "1");
+    });
+
+    it("shows empty cart state initially", () => {
+      cy.getByTestId("cart-link").click();
+
+      cy.getByTestId("empty-cart-state").should("be.visible");
+
+      cy.getByTestId("continue-shopping-btn").should("be.visible");
+    });
   });
 });

@@ -23,7 +23,7 @@ export function HomePage() {
   const [isHydrated, setIsHydrated] = useState(false);
   const { items } = useCart();
 
-  console.log(categories)
+  console.log(categories);
 
   const selectedCategories = useMemo(() => {
     return searchParams
@@ -66,7 +66,7 @@ export function HomePage() {
     }
 
     setIsHydrated(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // mount only — intentionally excludes searchParams
 
   // Once searchParams are set from localStorage, mark hydration done
@@ -86,17 +86,18 @@ export function HomePage() {
     );
   }, [isHydrated, selectedCategories]);
 
- useEffect(() => {
-  const controller = new AbortController();
+  useEffect(() => {
+    const controller = new AbortController();
 
-  fetchCategories(controller.signal)
-    .then(setCategories)
-    .catch(() => {
-      !controller.signal.aborted && setErrorMessage("Could not load categories.");
-    });
+    fetchCategories(controller.signal)
+      .then(setCategories)
+      .catch(() => {
+        !controller.signal.aborted &&
+          setErrorMessage("Could not load categories.");
+      });
 
-  return () => controller.abort();
-}, []);
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -182,7 +183,10 @@ export function HomePage() {
           <p className="mt-6 text-sm text-red-600">{errorMessage}</p>
         )}
         {isLoading && (
-          <section className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <section
+            className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+            data-testid="products-loading"
+          >
             {Array.from({ length: 8 }).map((_, index) => (
               <div key={index} className="space-y-2 animate-pulse">
                 <div className="aspect-square w-full rounded-lg bg-slate-200" />
@@ -198,6 +202,7 @@ export function HomePage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-5 flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"
+            data-testid="empty-products-state"
           >
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
               <Icon name="ShoppingBag" size={34} className="text-slate-500" />
@@ -218,6 +223,7 @@ export function HomePage() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.2 }}
               className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+              data-testid="products-grid"
             >
               {products.map((product) => {
                 const cartItem = items.find(

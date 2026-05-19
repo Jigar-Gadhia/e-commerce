@@ -136,6 +136,7 @@ export function CartPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="mt-5 flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"
+            data-testid="empty-cart-state"
           >
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
               <Icon name="ShoppingCart" size={34} className="text-slate-500" />
@@ -153,6 +154,7 @@ export function CartPage() {
             <Link
               to="/"
               className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-medium text-white transition-all duration-200 hover:scale-[1.02] hover:bg-slate-800"
+              data-testid="continue-shopping-btn"
             >
               <Icon name="ArrowLeft" size={16} />
               Continue Shopping
@@ -175,6 +177,7 @@ export function CartPage() {
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
                     className="group flex gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-lg"
+                    data-testid={`cart-line-item-${line.product.id}`}
                   >
                     {/* Image */}
                     <div className="relative shrink-0 overflow-hidden rounded-2xl bg-slate-100">
@@ -182,6 +185,7 @@ export function CartPage() {
                         src={line.product.images[0]}
                         alt={line.product.title}
                         className="h-24 w-24 object-cover transition-transform duration-300 group-hover:scale-105 sm:h-28 sm:w-28"
+                        data-testid={`cart-item-image-${line.product.id}`}
                       />
                     </div>
 
@@ -190,7 +194,10 @@ export function CartPage() {
                       <div className="space-y-2">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="line-clamp-2 text-sm font-semibold leading-6 text-slate-900 sm:text-base">
+                            <p
+                              className="line-clamp-2 text-sm font-semibold leading-6 text-slate-900 sm:text-base"
+                              data-testid={`cart-item-title-${line.product.id}`}
+                            >
                               {line.product.title}
                             </p>
 
@@ -200,7 +207,10 @@ export function CartPage() {
                           </div>
 
                           <div className="shrink-0 text-right">
-                            <p className="text-lg font-bold tracking-tight text-slate-900">
+                            <p
+                              className="text-lg font-bold tracking-tight text-slate-900"
+                              data-testid={`cart-item-total-${line.product.id}`}
+                            >
                               ${(line.product.price * line.quantity).toFixed(2)}
                             </p>
 
@@ -239,7 +249,10 @@ export function CartPage() {
             </div>
 
             {/* Summary */}
-            <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <aside
+              className="h-fit rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              data-testid="order-summary"
+            >
               <h2 className="text-lg font-semibold text-slate-900">
                 Order Summary
               </h2>
@@ -257,13 +270,19 @@ export function CartPage() {
                       Total
                     </span>
 
-                    <span className="text-2xl font-bold tracking-tight text-slate-900">
+                    <span
+                      className="text-2xl font-bold tracking-tight text-slate-900"
+                      data-testid="cart-total"
+                    >
                       ${totalValue.toFixed(2)}
                     </span>
                   </div>
                 </div>
 
-                <button className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-4 text-sm font-medium text-white transition-all duration-200 hover:scale-[1.01] hover:bg-slate-800">
+                <button
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-4 text-sm font-medium text-white transition-all duration-200 hover:scale-[1.01] hover:bg-slate-800"
+                  data-testid="checkout-btn"
+                >
                   <Icon name="CreditCard" size={18} />
                   Proceed to Checkout
                 </button>

@@ -72,6 +72,7 @@ export default function CategoryFilter({
       <summary
         onClick={handleToggle}
         className="flex cursor-pointer list-none items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+        data-testid="category-filter-toggle"
       >
         <Icon name="Filter" size={18} />
 
@@ -87,6 +88,7 @@ export default function CategoryFilter({
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.2 }}
           className="hidden sm:block"
+          data-testid="category-filter-dropdown"
         >
           <Icon
             name="ChevronDown"
@@ -113,8 +115,10 @@ export default function CategoryFilter({
                   <label
                     key={category.id}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm text-slate-700 transition-colors hover:bg-slate-50"
+                    data-testid={`category-option-${category.id}`}
                   >
                     <input
+                      data-testid={`category-checkbox-${category.id}`}
                       type="checkbox"
                       checked={checked}
                       onChange={() => onToggle(category.id)}

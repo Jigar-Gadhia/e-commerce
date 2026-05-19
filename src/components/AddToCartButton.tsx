@@ -25,7 +25,7 @@ export default function AddToCartButton({
           whileTap={{ scale: 0.96 }}
           onClick={() => onAdd(product)}
           className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-slate-700"
-          data-testid="add-to-cart"
+          data-testid="add-to-cart-btn"
         >
           Add to Cart
         </motion.button>
@@ -42,6 +42,7 @@ export default function AddToCartButton({
             whileTap={{ scale: 0.9 }}
             onClick={() => onRemove(product.id)}
             className="flex h-11 w-11 items-center justify-center text-lg font-medium text-slate-700 transition-colors hover:bg-slate-100"
+            data-testid="decrease-qty-btn"
           >
             −
           </motion.button>
@@ -52,6 +53,7 @@ export default function AddToCartButton({
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.15 }}
             className="min-w-10 text-center text-sm font-semibold text-slate-900"
+            data-testid="quantity-display"
           >
             {quantity}
           </motion.div>
@@ -60,6 +62,7 @@ export default function AddToCartButton({
             whileTap={{ scale: 0.9 }}
             onClick={() => onAdd(product)}
             className="flex h-11 w-11 items-center justify-center text-lg font-medium text-slate-700 transition-colors hover:bg-slate-100"
+            data-testid="increase-qty-btn"
           >
             +
           </motion.button>

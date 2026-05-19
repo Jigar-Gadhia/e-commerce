@@ -14,6 +14,7 @@ const ProductCard = ({ product, quantity = 0 }: ProductCardProps) => {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
       className="group min-w-0"
+      data-testid={`product-item-${product.id}`}
     >
       <Link
         to={{

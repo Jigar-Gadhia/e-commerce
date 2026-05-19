@@ -13,6 +13,8 @@ declare global {
       waitForProducts: () => Chainable<JQuery<HTMLElement>>;
       openFirstProduct: () => Chainable<void>;
       addProductToCart: () => Chainable<void>;
+      checkProductsExist: () => Chainable<boolean>;
+      checkCategoriesExist: () => Chainable<boolean>;
     }
   }
 }
@@ -68,6 +70,20 @@ Cypress.Commands.add("openFirstProduct", () => {
 // Add product to cart (assumes product page is open)
 Cypress.Commands.add("addProductToCart", () => {
   cy.clickVisibleElement('[data-testid="add-to-cart-btn"]');
+});
+
+// Check if products exist
+Cypress.Commands.add("checkProductsExist", () => {
+  return cy.getProductItems().then(($products) => {
+    return $products.length > 0;
+  });
+});
+
+// Check if categories exist
+Cypress.Commands.add("checkCategoriesExist", () => {
+  return cy.getCategoryCheckboxes().then(($categories) => {
+    return $categories.length > 0;
+  });
 });
 
 export {};

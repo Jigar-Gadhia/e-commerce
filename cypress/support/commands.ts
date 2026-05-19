@@ -25,11 +25,20 @@ Cypress.Commands.add("getByTestId", (testId: string) => {
 
 Cypress.Commands.add(
   "getByRole",
-  (role: string, options: { name: string | RegExp }) => {
+  (
+    role: string,
+    options: { name: string | RegExp }
+  ): Cypress.Chainable<JQuery<HTMLElement>> => {
     if (role === "button") {
-      return cy.contains("button", options.name);
+      return cy.contains(
+        "button",
+        options.name
+      ) as unknown as Cypress.Chainable<JQuery<HTMLElement>>;
     }
-    return cy.get(role).contains(options.name);
+
+    return cy.get(role).contains(
+      options.name
+    ) as unknown as Cypress.Chainable<JQuery<HTMLElement>>;
   }
 );
 

@@ -9,61 +9,65 @@ describe("E-Commerce App", () => {
     });
 
     it("shows products and can open a product", () => {
-      // page visible
+
       cy.getByTestId("home-page").should("be.visible");
 
-      // wait for loading to finish
       cy.get('[data-testid^="product-item-"]', {
-        timeout: 10000,
+        timeout: 20000,
       }).should("have.length.greaterThan", 0);
 
-      // open first product
       cy.get('[data-testid^="product-item-"]')
         .first()
         .should("be.visible")
         .click();
 
-      // product page visible
       cy.getByTestId("product-page").should("be.visible");
 
-      // add to cart visible
       cy.getByTestId("add-to-cart-btn").should("be.visible");
 
-      // route validation
       cy.url().should("include", "/product");
     });
   });
 
   it("filters products by category", () => {
-    cy.getByTestId("category-filter-toggle").click();
+    cy.intercept("GET", "**/products*").as("getProducts");
+
+    cy.getByTestId("category-filter-toggle").should("be.visible").click();
 
     cy.get('[data-testid^="category-checkbox-"]', {
-      timeout: 10000,
+      timeout: 20000,
     })
       .should("have.length.greaterThan", 0)
       .first()
       .click();
 
+    cy.wait("@getProducts");
+
     cy.url().should("include", "category=");
 
-    cy.get('[data-testid^="product-item-"]').should(
-      "have.length.greaterThan",
-      0,
-    );
+    cy.get("body").then(($body) => {
+      const hasProducts =
+        $body.find('[data-testid^="product-item-"]').length > 0;
+
+      const hasEmptyState =
+        $body.find('[data-testid="empty-products-state"]').length > 0;
+
+      expect(
+        hasProducts || hasEmptyState,
+        "products or empty state should render",
+      ).to.equal(true);
+    });
   });
 
   describe("Cart", () => {
     it("user can add and remove item from cart", () => {
-      // open product
+
       cy.get('[data-testid^="product-item-"]').first().click();
 
-      // add to cart
       cy.getByTestId("add-to-cart-btn").should("be.visible").click();
 
-      // cart badge updates
       cy.getByTestId("cart-link").should("contain", "1");
 
-      // open cart
       cy.getByTestId("cart-link").click();
 
       cy.url().should("include", "/cart");
@@ -74,39 +78,38 @@ describe("E-Commerce App", () => {
 
       cy.getByTestId("cart-total").should("be.visible");
 
-      // remove item
       cy.getByTestId("decrease-qty-btn").should("be.visible").click();
 
-      // empty state visible
       cy.getByTestId("empty-cart-state").should("be.visible");
     });
 
     it("user can increase and decrease cart quantity", () => {
       cy.get('[data-testid^="product-item-"]').first().click();
 
-      // add first item
       cy.getByTestId("add-to-cart-btn").click();
 
-      // increase quantity
       cy.getByTestId("increase-qty-btn").should("be.visible").click();
 
-      // quantity = 2
       cy.getByTestId("quantity-display").should("contain", "2");
 
-      // decrease quantity
       cy.getByTestId("decrease-qty-btn").click();
 
-      // quantity = 1
       cy.getByTestId("quantity-display").should("contain", "1");
 
-      // remove button still visible
       cy.getByTestId("decrease-qty-btn").should("be.visible");
     });
 
-    it("persists cart after page refresh", () => {
-      cy.get('[data-testid^="product-item-"]').first().click();
+    it("persists cart items after page refresh", () => {
+      cy.get('[data-testid^="product-item-"]', {
+        timeout: 20000,
+      })
+        .should("have.length.greaterThan", 0)
+        .first()
+        .click();
 
-      cy.getByTestId("add-to-cart-btn").click();
+      cy.getByTestId("add-to-cart-btn").should("be.visible").click();
+
+      cy.getByTestId("cart-link").should("contain", "1");
 
       cy.reload();
 

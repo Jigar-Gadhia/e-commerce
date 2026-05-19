@@ -14,7 +14,6 @@ const ProductCard = ({ product, quantity = 0 }: ProductCardProps) => {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
       className="group min-w-0"
-      data-testid={`product-item-${product.id}`}
     >
       <Link
         to={{
@@ -23,32 +22,6 @@ const ProductCard = ({ product, quantity = 0 }: ProductCardProps) => {
         data-testid={`product-item-${product.id}`}
         className="block overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:border-slate-300 hover:shadow-xl"
       >
-        {/* <div className="relative overflow-hidden bg-slate-100">
-          <img
-            src={product.images[0]}
-            alt={product.title}
-            className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-          {quantity > 0 && (
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/70 px-3 py-1.5 shadow-2xl backdrop-blur-xl"
-            >
-              <Icon
-                name="ShoppingCart"
-                size={12}
-                className="text-white sm:h-[13px] sm:w-[13px]"
-              />
-
-              <span className="text-xs font-bold tracking-wide text-white">
-                {quantity}
-              </span>
-            </motion.div>
-          )}
-        </div> */}
         <div className="relative overflow-hidden bg-slate-100">
           {product.images[0]?.match(/\.(jpg|jpeg|png|webp|gif|avif)$/i) ? (
             <img
